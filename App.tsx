@@ -10,12 +10,14 @@ import NetInfo from "@react-native-community/netinfo";
 import { listenToAuthChanges } from './src/firebase/authlistner';
 import { connectionChange } from './src/redux/slice/networkSlice';
 import { getFirestore, collection, addDoc } from '@react-native-firebase/firestore';
+import { initializePushNotifications } from './src/services/pushNotificationService';
 
 import { getApp } from '@react-native-firebase/app';
 import { initializeAppCheck, ReactNativeFirebaseAppCheckProvider } from '@react-native-firebase/app-check';
 
 const App = () => {
   const dispatch = useDispatch();
+  const user = useSelector((state: any) => state.auth.user);
 
   // const movies = [
   //   {
@@ -320,6 +322,31 @@ const App = () => {
 
     return () => unsubscribe(); // 2. Clean up
   }, [dispatch]);
+
+  useEffect(() => {
+    let cleanupNotifications = () => { };
+    let isDisposed = false;
+
+    const setupPush = async () => {
+      const cleanup = await initializePushNotifications({
+        uid: user?.uid,
+      });
+
+      if (isDisposed) {
+        cleanup();
+        return;
+      }
+
+      cleanupNotifications = cleanup;
+    };
+
+    setupPush();
+
+    return () => {
+      isDisposed = true;
+      cleanupNotifications();
+    };
+  }, [user?.uid]);
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>

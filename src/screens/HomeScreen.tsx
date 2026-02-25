@@ -27,6 +27,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { fetchMovies } from '../redux/slice/moviesSlice'
 import LottieView from 'lottie-react-native'
 import HomeSkeletonLoader from '../components/HomeSkeletonLoader'
+import { sendLocalTestNotification } from '../services/pushNotificationService'
 interface Feature {
   id: number
   title: string
@@ -184,6 +185,20 @@ const HomeScreen = () => {
       navigation.navigate(feature.screen as never)
     }
   }
+
+  // const handleTestNotification = async () => {
+  //   try {
+  //     await sendLocalTestNotification()
+  //     if (Platform.OS === 'android') {
+  //       ToastAndroid.show('Test notification sent', ToastAndroid.SHORT)
+  //     }
+  //   } catch (error) {
+  //     console.log('Test notification failed:', error)
+  //     if (Platform.OS === 'android') {
+  //       ToastAndroid.show('Failed to send test notification', ToastAndroid.SHORT)
+  //     }
+  //   }
+  // }
 
   const renderPromo = ({ item }: any) => (
     <LinearGradient
@@ -352,10 +367,8 @@ const HomeScreen = () => {
           />
           {/* Now Showing Section */}
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>🎬 Now Showing</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('MovieList')}>
-              <Text style={styles.seeAll}>See All</Text>
-            </TouchableOpacity>
+            <Text style={styles.sectionTitle}>🎬 Featured Movies</Text>
+
           </View>
 
           {/* Featured Movie Carousel */}
@@ -366,6 +379,12 @@ const HomeScreen = () => {
 
 
           {/* Movie Poster Grid */}
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>🎬 Now Showing</Text>
+            <TouchableOpacity onPress={() => navigation.navigate('MovieList')}>
+              <Text style={styles.seeAll}>See All</Text>
+            </TouchableOpacity>
+          </View>
           {filteredMovies.length === 0 ? (
             <View style={styles.emptyState}>
               <MaterialIcons name="movie-filter" size={Responsive.fontSize[64]} color={Colors.text.secondary} />
@@ -422,6 +441,16 @@ const HomeScreen = () => {
               </TouchableOpacity>
             ))
             }
+            {/* <TouchableOpacity
+              style={styles.actionCard}
+              onPress={handleTestNotification}
+              activeOpacity={0.8}
+            >
+              <View style={[styles.actionIcon, { backgroundColor: '#6C63FF' }]}>
+                <MaterialIcons name="notifications-active" size={Responsive.fontSize[24]} color="#fff" />
+              </View>
+              <Text style={styles.actionTitle}>Test Notification</Text>
+            </TouchableOpacity> */}
           </View>
         </ScrollView>
       </View>

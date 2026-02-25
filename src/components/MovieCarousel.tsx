@@ -6,18 +6,32 @@ import LinearGradient from 'react-native-linear-gradient'
 import { Responsive } from '../utilities/Responsive'
 import { Colors } from '../utilities/AppTheme'
 
-const Dot = ({ index, progress }) => {
-    const dotStyle = useAnimatedStyle(() => ({
-        opacity: Math.round(progress.value) === index ? 1 : 0.3,
-    }))
-    return <Animated.View style={[styles.dot, dotStyle]} />
+interface MovieCarouselProps {
+    movies: { title: string; image: string }[]
+    autoPlayEnabled: boolean
 }
-
-const MovieCarousel = ({ movies = [], autoPlayEnabled }) => {
+interface Movie {
+    title: string;
+    image: string;
+}
+const MovieCarousel = ({ movies = [], autoPlayEnabled }: MovieCarouselProps) => {
     const progress = useSharedValue(0)
     const carouselMovies = movies.slice(0, 5)
 
-    const renderItems = ({ item }) => {
+    const Dot = ({ index, progress }: { index: number; progress: any }) => {
+        const dotStyle = useAnimatedStyle(() => ({
+            opacity: Math.round(progress.value) === index ? 1 : 0.3,
+            transform: [
+                {
+                    scale: Math.round(progress.value) === index ? 1.2 : 1,
+                },
+            ],
+        }))
+        return <Animated.View style={[styles.dot, dotStyle]} />
+    }
+
+
+    const renderItems = ({ item }: { item: Movie }) => {
         return (
             <View style={styles.slide}>
                 <Image source={{ uri: item.image }} style={styles.image}
@@ -35,7 +49,7 @@ const MovieCarousel = ({ movies = [], autoPlayEnabled }) => {
     return (
         <View style={styles.container}>
             <Carousel
-                width={Responsive.size.wp(90)}
+                width={Responsive.size.wp(80)}
                 height={Responsive.size.hp(30)}
                 data={carouselMovies}
                 autoPlay={autoPlayEnabled && carouselMovies.length > 1}
@@ -90,7 +104,7 @@ const styles = StyleSheet.create({
     },
     title: {
         color: Colors.text.inverse,
-        fontSize: Responsive.fontSize[18],
+        fontSize: Responsive.fontSize[16],
         fontWeight: '600',
         textAlign: 'center',
     },
@@ -103,7 +117,7 @@ const styles = StyleSheet.create({
         width: Responsive.spacing[8],
         height: Responsive.spacing[8],
         borderRadius: Responsive.radius[4],
-        backgroundColor: Colors.primary,
+        backgroundColor: Colors.text.primary,
         marginHorizontal: Responsive.spacing[4],
 
     },

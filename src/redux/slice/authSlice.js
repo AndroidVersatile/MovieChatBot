@@ -89,7 +89,7 @@ export const loginWithEmail = createAsyncThunk(
                 email,
                 password
             );
-            Toast.show({ type: 'success', text1: 'Success', text2: 'Logged in successfully!' });
+            // Toast.show({ type: 'success', text1: 'Success', text2: 'Logged in successfully!' });
             return serializeUser(userCredential.user);
         } catch (error) {
             const message = getReadableErrorMessage(error.code);
@@ -136,7 +136,7 @@ export const loginWithGoogle = createAsyncThunk(
                 googleCredential
             );
 
-            Toast.show({ type: 'success', text1: 'Success', text2: 'Signed in!' });
+            // Toast.show({ type: 'success', text1: 'Success', text2: 'Signed in!' });
 
 
             return serializeUser(userCredential.user);

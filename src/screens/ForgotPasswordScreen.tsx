@@ -1,22 +1,29 @@
-import { Animated, Image, KeyboardAvoidingView, Platform, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, Vibration, View } from 'react-native'
+import { ActivityIndicator, Animated, Image, KeyboardAvoidingView, Platform, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, Vibration, View } from 'react-native'
 import React, { useRef, useState } from 'react'
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import Feather from 'react-native-vector-icons/Feather';
 import { Responsive } from '../utilities/Responsive';
 import { Colors } from '../utilities/AppTheme';
+import { forgotPassword } from '../redux/slice/authSlice';
+import { useDispatch, useSelector } from 'react-redux';
 
 const ForgotPasswordScreen = () => {
     const insets = useSafeAreaInsets();
     const navigation = useNavigation();
     const [email, setEmail] = useState('');
+    const { forgotPasswordLoading, authError } = useSelector((state: any) => state.auth)
+    const [showMessage, setShowMessage] = useState({
+        successMsg: '',
+        showMsg: false
+    })
     const [focusedField, setFocusedField] = useState(null);
     const fieldPositions = useRef({});
     const scrollRef = useRef(null);
     const emailInputRef = useRef(null);
     const [errors, setErrors] = useState({});
     const timerRef = useRef(null);
-
+    const dispatch = useDispatch();
     const focusableFields = {
         email: emailInputRef,
     };
@@ -55,7 +62,7 @@ const ForgotPasswordScreen = () => {
         ]).start();
     };
 
-    const handleResetPassword = () => {
+    const handleResetPassword = async () => {
         let newErrors = {};
         if (!email.trim()) {
             newErrors.email = 'Email is required';
@@ -77,8 +84,22 @@ const ForgotPasswordScreen = () => {
             return;
         }
         setErrors({});
-        // Handle successful password reset here
+
         Vibration.vibrate(100);
+        const formattedEmail = email.trim().toLowerCase();
+        try {
+            await dispatch(forgotPassword(formattedEmail)).unwrap();
+
+            setShowMessage({
+                showMsg: true,
+                successMsg: 'Password reset link has been sent to your email , please check you inbox or spam box, Thanks!',
+
+            })
+        } catch (error) {
+            console.log("Firebase Error Code:", error.code); // Look for specific codes here
+            console.log("Firebase Error Message:", error.message);
+
+        }
         return () => { clearInterval(timerRef.current) };
     };
 
@@ -122,7 +143,10 @@ const ForgotPasswordScreen = () => {
                     bounces={true}
                 >
                     <Text style={styles.titleText}>Forgot Password?</Text>
-                    <Text style={styles.subtitleText}>Enter your email address and we'll send you a link to reset your password.</Text>
+                    {showMessage.showMsg ? (
+                        <Text style={styles.successText} accessibilityLiveRegion="polite">{showMessage.successMsg}</Text>
+                    ) : <Text style={styles.subtitleText}>Enter your email address and we'll send you a link to reset your password.</Text>
+                    }
 
                     <View onLayout={(e) => { fieldPositions.current.email = e.nativeEvent.layout.y; }} style={styles.inputWrapper}>
                         <Text style={styles.labelText}>Email address</Text>
@@ -150,8 +174,19 @@ const ForgotPasswordScreen = () => {
                         )}
                     </View>
 
-                    <TouchableOpacity onPress={handleResetPassword} style={styles.resetBtn}>
-                        <Text style={styles.resetText}>Send Reset Link</Text>
+                    <TouchableOpacity
+                        style={styles.resetBtn}
+                        onPress={handleResetPassword}
+                        disabled={forgotPasswordLoading}>
+                        {forgotPasswordLoading ? (
+                            <>
+                                <ActivityIndicator size="small" color={Colors.text.primary} />
+                                <Text style={[styles.resetText, { marginLeft: Responsive.spacing[10] }]}>Sending...</Text>
+                            </>
+                        ) : (
+                            <Text style={styles.resetText}>Send Reset Link</Text>
+                        )
+                        }
                     </TouchableOpacity>
 
                     <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backToLoginWrapper}>
@@ -281,5 +316,13 @@ const styles = StyleSheet.create({
     loginImageStyle: {
         width: Responsive.size.wp(58),
         height: Responsive.size.hp(25)
+    },
+    successText: {
+        color: Colors.text.secondary,
+        fontSize: Responsive.fontSize[14],
+        marginTop: Responsive.spacing[24],
+        marginBottom: Responsive.spacing[8],
+        textAlign: 'center',
+        fontWeight: '700'
     }
 })

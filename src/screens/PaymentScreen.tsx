@@ -10,6 +10,7 @@ import { Responsive } from '../utilities/Responsive'
 import { Colors } from '../utilities/AppTheme'
 import { saveBooking } from '../redux/slice/moviesSlice'
 import { buildShowId, reserveSeatsForShow } from '../services/movieService'
+import { Image } from 'react-native'
 
 const PaymentScreen = () => {
   const insets = useSafeAreaInsets()
@@ -25,7 +26,9 @@ const PaymentScreen = () => {
   const time = params.time || params.selectedTime
   const date = params.date || params.selectedDate
   const selectedSeats = params.selectedSeats || params.seats || []
+
   const total = params.total || params.totalPrice || 0
+
   const showId = params.showId || buildShowId({
     movieId: movie?.id,
     movieTitle: movie?.title,
@@ -170,7 +173,7 @@ const PaymentScreen = () => {
         </View>
 
         <View style={styles.paymentInfo}>
-          <MaterialIcons name="payment" size={Responsive.fontSize[40]} color={Colors.primary} />
+          <Image source={require('../assets/images/RazorPayLogo.png')} style={{ width: Responsive.size.wp(60), height: Responsive.size.hp(14), resizeMode: 'contain' }} />
           <Text style={styles.paymentTitle}>Razorpay Secure Payment</Text>
           <Text style={styles.paymentSubtitle}>Pay using UPI, Cards, Wallets & More</Text>
         </View>

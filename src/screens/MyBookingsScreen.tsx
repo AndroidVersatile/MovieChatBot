@@ -42,6 +42,8 @@ const MyBookingsScreen = () => {
     return bookingDate >= nextDay
   })
 
+
+
   const pastBookings = bookingsList.filter((b: any) => {
     const bookingDate = parseDate(b.date)
     return bookingDate < today

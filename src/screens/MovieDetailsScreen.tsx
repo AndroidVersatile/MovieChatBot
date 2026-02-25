@@ -33,6 +33,7 @@ const MovieDetailsScreen = () => {
         <View style={styles.imageContainer}>
           <Image source={{ uri: movie.image }} style={styles.movieImage} />
           <TouchableOpacity
+            activeOpacity={0.8}
             style={[styles.backButton, { top: insets.top + Responsive.spacing[10] }]}
             onPress={() => navigation.goBack()}
           >

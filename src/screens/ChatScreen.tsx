@@ -107,13 +107,30 @@ const ChatScreen = ({ route }: any) => {
     })
   }, [appendBotMessage])
 
-  const resetChatState = useCallback((withGreeting = true) => {
+  const sendMovieBookingPrompt = useCallback((movieName?: string | null) => {
+    appendBotMessage(`Great! You've selected "${movieName || 'this movie'}". Let's get you a ticket.\n\n📅 Please select your preferred date:`, {
+      quickReplies: {
+        type: 'radio',
+        keepIt: true,
+        values: [{ title: '📅 Select Date', value: 'select_date' }]
+      }
+    })
+  }, [appendBotMessage])
+
+  const resetChatState = useCallback((withGreeting = true, movieContext?: { movieId?: any, movieName?: any }) => {
     setMessages([])
-    setBookingState(getInitialBookingState())
+    const nextMovieId = movieContext?.movieId || null
+    const nextMovieName = movieContext?.movieName || null
+    setBookingState(getInitialBookingState(nextMovieId, nextMovieName))
+    if (nextMovieId) {
+      lastPromptedMovieIdRef.current = nextMovieId
+      setTimeout(() => sendMovieBookingPrompt(nextMovieName), 50)
+      return
+    }
     if (withGreeting) {
       setTimeout(() => sendDiscoveryGreeting(), 50)
     }
-  }, [getInitialBookingState, sendDiscoveryGreeting])
+  }, [getInitialBookingState, sendDiscoveryGreeting, sendMovieBookingPrompt])
 
   const sendMovieList = useCallback((movies: any[], heading?: string) => {
     if (heading) {
@@ -386,19 +403,13 @@ const ChatScreen = ({ route }: any) => {
       initRef.current = true
       if (bookingState.movieId) {
         lastPromptedMovieIdRef.current = bookingState.movieId
-        appendBotMessage(`Great! You've selected "${bookingState.movieName}". Let's get you a ticket.\n\n📅 Please select your preferred date:`, {
-          quickReplies: {
-            type: 'radio',
-            keepIt: true,
-            values: [{ title: '📅 Select Date', value: 'select_date' }]
-          }
-        })
+        sendMovieBookingPrompt(bookingState.movieName)
       } else {
         sendDiscoveryGreeting()
       }
     }
     init()
-  }, [appendBotMessage, bookingState.movieId, bookingState.movieName, sendDiscoveryGreeting])
+  }, [bookingState.movieId, bookingState.movieName, sendDiscoveryGreeting, sendMovieBookingPrompt])
   // Reset booking state when new movie is selected
   useEffect(() => {
     if (route?.params?.movieId) {
@@ -415,24 +426,25 @@ const ChatScreen = ({ route }: any) => {
       })
       if (route.params.movieId !== lastPromptedMovieIdRef.current) {
         lastPromptedMovieIdRef.current = route.params.movieId
-        appendBotMessage(`Great! You've selected "${route.params.movieName}". Let's get you a ticket.\n\n📅 Please select your preferred date:`, {
-          quickReplies: {
-            type: 'radio',
-            keepIt: true,
-            values: [{ title: '📅 Select Date', value: 'select_date' }]
-          }
-        })
+        sendMovieBookingPrompt(route.params.movieName)
       }
     }
-  }, [appendBotMessage, route?.params?.movieId, route?.params?.movieName])
+  }, [route?.params?.movieId, route?.params?.movieName, sendMovieBookingPrompt])
 
   useFocusEffect(
     useCallback(() => {
       if (paymentFlowStartedRef.current) {
         paymentFlowStartedRef.current = false
-        resetChatState(true)
+        if (route?.params?.movieId) {
+          resetChatState(false, {
+            movieId: route.params.movieId,
+            movieName: route.params.movieName
+          })
+        } else {
+          resetChatState(true)
+        }
       }
-    }, [resetChatState])
+    }, [resetChatState, route?.params?.movieId, route?.params?.movieName])
   )
 
   useEffect(() => {

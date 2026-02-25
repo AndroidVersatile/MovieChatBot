@@ -12,11 +12,12 @@ import auth from '@react-native-firebase/auth';
 import { signInWithPhoneNumber } from '@react-native-firebase/auth';
 import { loginWithEmail, loginWithGoogle, verifyOtpAndLogin } from '../redux/slice/authSlice';
 import Toast from 'react-native-toast-message';
+
 const LoginScreen = () => {
     const getAuth = () => auth(getApp());
     const { loginLoading, error, googleLoginLoading, otpVerifyLoading } = useSelector((state: any) => state.auth)
     // console.log('otpverifyloading', otpVerifyLoading);
-    console.log('Google Loading', googleLoginLoading);
+    // console.log('Google Loading', googleLoginLoading);
 
 
     const insets = useSafeAreaInsets();
@@ -56,7 +57,7 @@ const LoginScreen = () => {
         otp: otpInputRef,
     };
 
-    const focusField = (key) => {
+    const focusField = (key: string) => {
         const ref = focusableFields[key];
         if (!ref) return;
         setTimeout(() => {
