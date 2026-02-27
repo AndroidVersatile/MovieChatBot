@@ -9,6 +9,7 @@ import PaymentScreen from '../screens/PaymentScreen'
 import BookingConfirmationScreen from '../screens/BookingConfirmationScreen'
 import TicketScreen from '../screens/TicketScreen'
 
+
 const Stack = createNativeStackNavigator()
 
 const HomeStack = () => {
@@ -16,7 +17,7 @@ const HomeStack = () => {
     <Stack.Navigator
       screenOptions={{
         headerShown: false,
-        animation: 'slide_from_right',
+        animation: 'fade_from_bottom',
         presentation: 'card',
       }}
     >

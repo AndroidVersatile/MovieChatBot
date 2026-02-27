@@ -186,7 +186,21 @@ const LoginScreen = () => {
             setOtp('');
             focusField('otp');
         } catch (e) {
-            console.log("SMS Error", e);
+            console.log("SMS Error", e.message, typeof e);
+            // const errorMsg = 
+            if (__DEV__) {
+                Toast.show({
+                    type: 'error',
+                    text1: 'SMS Error',
+                    text2: e.message
+                })
+                return
+            }
+            Toast.show({
+                type: 'error',
+                text1: 'SMS Error',
+                text2: 'An unknown error occured'
+            })
         } finally {
             setSendOtpLoading(false)
         }

@@ -15,6 +15,7 @@ import ContactUsScreen from '../screens/ContactUsScreen';
 import MyBookingsScreen from '../screens/MyBookingsScreen';
 import TicketScreen from '../screens/TicketScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+
 const Stack = createNativeStackNavigator();
 const ProfileStack = () => {
 
@@ -22,8 +23,8 @@ const ProfileStack = () => {
         <Stack.Navigator
             screenOptions={{
                 headerShown: false,
-                animation: 'slide_from_right',
-                // presentation: 'card',
+                animation: 'fade_from_bottom',
+                presentation: 'card',
             }}
         >
             <Stack.Screen name='ProfileMain' component={ProfileScreen} />

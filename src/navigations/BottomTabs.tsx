@@ -21,9 +21,15 @@ const BottomTabs = () => {
     const insets = useSafeAreaInsets();
     return (
         <Tab.Navigator
+            detachInactiveScreens={true}
             screenOptions={{
 
                 headerShown: false,
+                freezeOnBlur: true,
+                animation: 'none',
+                sceneStyle: {
+                    backgroundColor: Colors.background,
+                },
                 tabBarShowLabel: true,
                 tabBarActiveTintColor: Colors.primary,
                 tabBarInactiveTintColor: Colors.text.secondary,
@@ -41,12 +47,13 @@ const BottomTabs = () => {
 
                 tabBarBackground: () => (
                     <View style={styles.tabBarBgWrapper} pointerEvents="box-none">
-                        <BlurView
+                        {/* <BlurView
                             blurType='dark'
                             blurAmount={5}
                             reducedTransparencyFallbackColor="rgba(26,26,26,0.95)"
-                            style={StyleSheet.absoluteFill}
-                        />
+                            style={styles.blurView}
+                            autoUpdate={false}
+                        /> */}
                     </View>
                 ),
 
@@ -64,7 +71,7 @@ const BottomTabs = () => {
                     tabBarStyle: ((route) => {
                         const routeName = getFocusedRouteNameFromRoute(route) ?? 'HomeMain';
                         if (routeName !== 'HomeMain') {
-                            return { display: 'none', height: 0 };
+                            return { display: 'none' };
                         }
                         return {
                             position: "absolute",
@@ -82,11 +89,6 @@ const BottomTabs = () => {
                             color={focused ? Colors.primary : Colors.text.secondary}
                         />
                     ),
-                })}
-                listeners={({ navigation }) => ({
-                    tabPress: (e) => {
-                        navigation.navigate('Home', { screen: 'HomeMain' });
-                    },
                 })}
             />
 
@@ -138,7 +140,7 @@ const BottomTabs = () => {
                     tabBarStyle: ((route) => {
                         const routeName = getFocusedRouteNameFromRoute(route) ?? 'ProfileMain';
                         if (routeName !== 'ProfileMain') {
-                            return { display: 'none', height: 0 };
+                            return { display: 'none' };
                         }
                         return {
                             position: "absolute",
@@ -156,11 +158,6 @@ const BottomTabs = () => {
                             color={focused ? Colors.primary : Colors.text.secondary}
                         />
                     ),
-                })}
-                listeners={({ navigation }) => ({
-                    tabPress: (e) => {
-                        navigation.navigate('Profile', { screen: 'ProfileMain' });
-                    },
                 })}
             />
         </Tab.Navigator>
@@ -209,7 +206,7 @@ const styles = StyleSheet.create({
     },
     tabBarBgWrapper: {
         flex: 1,
-        backgroundColor: "transparent",
+        backgroundColor: 'rgba(26,26,26,0.92)',
         borderTopLeftRadius: Responsive.radius[50],
         borderTopRightRadius: Responsive.radius[50],
         overflow: "hidden",

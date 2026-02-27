@@ -18,10 +18,58 @@ import { useDispatch, useSelector } from 'react-redux';
 
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import NoInternetScreen from '../screens/NoInternetScreen';
-import FloatingInputScreen from '../screens/FloatingInputScreen';
+
+
 const Stack = createNativeStackNavigator();
+
 const RootNav = () => {
     const navigationRef = createNavigationContainerRef();
+    const linking = {
+        prefixes: ['moviechatbot://', 'https://moviechatbot.app'],
+        config: {
+            screens: {
+                OnBoardingScreen: 'onboarding',
+                LoginScreen: 'login',
+                SignUpScreen: 'signup',
+                ForgotPasswordScreen: 'forgot-password',
+                BottomTabs: {
+                    screens: {
+                        Home: {
+                            screens: {
+                                HomeMain: 'home',
+                                MovieList: 'movies',
+                                MovieDetails: 'movie/:movieId',
+                                TheaterSelection: 'theater',
+                                SeatSelection: 'seats',
+                                Payment: 'payment',
+                                BookingConfirmation: 'booking-confirmation',
+                                Ticket: 'ticket/:bookingId?',
+                            },
+                        },
+                        Book: 'book',
+                        Profile: {
+                            screens: {
+                                ProfileMain: 'profile',
+                                EditProfile: 'profile/edit',
+                                Settings: 'profile/settings',
+                                HelpSupport: 'profile/help-support',
+                                PaymentMethods: 'profile/payment-methods',
+                                Notifications: 'profile/notifications',
+                                ChangePassword: 'profile/change-password',
+                                DeleteAccount: 'profile/delete-account',
+                                MyBookings: 'profile/my-bookings',
+                                Ticket: 'profile/ticket/:bookingId?',
+                                AboutUs: 'about-us',
+                                TermsConditions: 'terms-conditions',
+                                PrivacyPolicy: 'privacy-policy',
+                                ContactUs: 'contact-us',
+                            },
+                        },
+                    },
+                },
+            },
+        },
+    };
     const [onboardingSeen, setOnboardingSeen] = useState(null);
     const { user } = useSelector(state => state.auth);
     // console.log('User', user);
@@ -58,13 +106,16 @@ const RootNav = () => {
     return (
         <NavigationContainer
             ref={navigationRef}
+            linking={linking}
             onReady={onNavigationReady}
+
         >
             <Stack.Navigator
                 key={user ? 'authenticated' : 'unauthenticated'}
                 screenOptions={{
                     headerShown: false,
                     animation: 'fade_from_bottom',
+
                 }}
 
             >
@@ -82,7 +133,9 @@ const RootNav = () => {
                         )
                     ) : (
                         <>
+
                             <Stack.Screen name='BottomTabs' component={BottomTabs} />
+                        
                         </>
                     )
                 }

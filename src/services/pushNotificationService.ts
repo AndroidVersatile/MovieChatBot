@@ -1,4 +1,4 @@
-import { PermissionsAndroid, Platform } from 'react-native';
+import { Linking, PermissionsAndroid, Platform } from 'react-native';
 import {
   AuthorizationStatus,
   getInitialNotification,
@@ -11,13 +11,16 @@ import {
   getToken,
   type RemoteMessage,
 } from '@react-native-firebase/messaging';
-import { doc, getFirestore, setDoc } from '@react-native-firebase/firestore';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { deleteDoc, doc, getFirestore, serverTimestamp, setDoc } from '@react-native-firebase/firestore';
 import notifee, { AndroidImportance, AndroidStyle } from '@notifee/react-native';
 
 const ANDROID_CHANNEL_ID = 'moviechatbot-high-v2';
 const ANDROID_CHANNEL_NAME = 'General Notifications';
 const DEDUPE_TTL_MS = 2 * 60 * 1000;
 const recentMessageKeys = new Map<string, number>();
+const APP_DEEPLINK_PREFIX = 'moviechatbot://';
+const DEVICE_FCM_TOKEN_STORAGE_KEY = 'device_fcm_token';
 
 const requestAndroidNotificationPermission = async (): Promise<boolean> => {
   if (Platform.OS !== 'android' || Number(Platform.Version) < 33) {
@@ -107,6 +110,45 @@ const isDuplicateMessage = (remoteMessage: RemoteMessage) => {
 
 type MessageSource = 'foreground' | 'background';
 
+const buildDeepLinkFromData = (data?: Record<string, string>): string | null => {
+  if (!data) return null;
+
+  if (data.link) {
+    return data.link;
+  }
+
+  const screen = (data.screen || '').trim();
+  if (!screen) return null;
+
+  const movieId = data.movieId || '';
+  const bookingId = data.bookingId || '';
+
+  const screenToPath: Record<string, string> = {
+    HomeMain: 'home',
+    MovieList: 'movies',
+    MovieDetails: movieId ? `movie/${encodeURIComponent(movieId)}` : 'movies',
+    Book: 'book',
+    ProfileMain: 'profile',
+    MyBookings: 'profile/my-bookings',
+    Notifications: 'profile/notifications',
+    PaymentMethods: 'profile/payment-methods',
+    Ticket: bookingId ? `profile/ticket/${encodeURIComponent(bookingId)}` : 'profile/ticket',
+  };
+
+  return screenToPath[screen] ? `${APP_DEEPLINK_PREFIX}${screenToPath[screen]}` : null;
+};
+
+const navigateFromNotificationData = async (data?: Record<string, string>) => {
+  const deepLink = buildDeepLinkFromData(data);
+  if (!deepLink) return;
+
+  try {
+    await Linking.openURL(deepLink);
+  } catch (error) {
+    console.log('Failed to open deep link:', deepLink, error);
+  }
+};
+
 export const displayLocalNotificationFromRemoteMessage = async (
   remoteMessage: RemoteMessage,
   source: MessageSource = 'foreground',
@@ -145,27 +187,30 @@ export const displayLocalNotificationFromRemoteMessage = async (
   });
 };
 
-export const sendLocalTestNotification = async (): Promise<void> => {
-  const androidChannelId = await ensureAndroidChannel();
-  const now = new Date();
-  const hh = String(now.getHours()).padStart(2, '0');
-  const mm = String(now.getMinutes()).padStart(2, '0');
+// export const sendLocalTestNotification = async (): Promise<void> => {
+//   const androidChannelId = await ensureAndroidChannel();
+//   const now = new Date();
+//   const hh = String(now.getHours()).padStart(2, '0');
+//   const mm = String(now.getMinutes()).padStart(2, '0');
 
-  await notifee.displayNotification({
-    id: `local-test-${Date.now()}`,
-    title: 'MovieChatBot Test',
-    body: `Local notification sent at ${hh}:${mm}`,
-    android: {
-      channelId: androidChannelId,
-      pressAction: { id: 'default' },
-      smallIcon: 'ic_launcher',
-    },
-  });
-};
+//   await notifee.displayNotification({
+//     id: `local-test-${Date.now()}`,
+//     title: 'MovieChatBot Test',
+//     body: `Local notification sent at ${hh}:${mm}`,
+//     android: {
+//       channelId: androidChannelId,
+//       pressAction: { id: 'default' },
+//       smallIcon: 'ic_launcher',
+//     },
+//   });
+// };
 
 const saveTokenForUser = async (uid: string, token: string): Promise<void> => {
   try {
     const db = getFirestore();
+    const platform = Platform.OS;
+
+    // Keep last-known token on user root for backward compatibility.
     await setDoc(
       doc(db, 'users', uid),
       {
@@ -174,8 +219,63 @@ const saveTokenForUser = async (uid: string, token: string): Promise<void> => {
       },
       { merge: true },
     );
+
+    // Multi-device support: one doc per token.
+    await setDoc(
+      doc(db, 'users', uid, 'devices', token),
+      {
+        token,
+        platform,
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true },
+    );
   } catch (error) {
     console.log('Failed to save FCM token:', error);
+  }
+};
+
+const persistDeviceToken = async (token: string): Promise<void> => {
+  try {
+    await AsyncStorage.setItem(DEVICE_FCM_TOKEN_STORAGE_KEY, token);
+  } catch (error) {
+    console.log('Failed to persist device token:', error);
+  }
+};
+
+const getPersistedDeviceToken = async (): Promise<string | null> => {
+  try {
+    return await AsyncStorage.getItem(DEVICE_FCM_TOKEN_STORAGE_KEY);
+  } catch (error) {
+    console.log('Failed to read persisted device token:', error);
+    return null;
+  }
+};
+
+export const cleanupPushTokenForUser = async (uid?: string | null): Promise<void> => {
+  if (!uid) return;
+
+  let token = await getPersistedDeviceToken();
+  if (!token) {
+    try {
+      token = await getToken(getMessaging());
+    } catch (error) {
+      console.log('Failed to get current device token for cleanup:', error);
+    }
+  }
+  if (!token) return;
+
+  try {
+    const db = getFirestore();
+    await deleteDoc(doc(db, 'users', uid, 'devices', token));
+  } catch (error) {
+    console.log('Failed to delete device token doc:', error);
+  } finally {
+    try {
+      await AsyncStorage.removeItem(DEVICE_FCM_TOKEN_STORAGE_KEY);
+    } catch (error) {
+      console.log('Failed to clear persisted device token:', error);
+    }
   }
 };
 
@@ -203,6 +303,7 @@ export const initializePushNotifications = async ({
   await registerDeviceForRemoteMessages(messagingInstance);
   const token = await getToken(messagingInstance);
   console.log('FCM token:', token);
+  await persistDeviceToken(token);
 
   if (uid && token) {
     await saveTokenForUser(uid, token);
@@ -215,6 +316,7 @@ export const initializePushNotifications = async ({
 
   const unsubscribeTokenRefresh = onTokenRefresh(messagingInstance, async nextToken => {
     console.log('FCM token refreshed:', nextToken);
+    await persistDeviceToken(nextToken);
     if (uid) {
       await saveTokenForUser(uid, nextToken);
     }
@@ -222,11 +324,15 @@ export const initializePushNotifications = async ({
 
   const unsubscribeOpenFromBackground = onNotificationOpenedApp(messagingInstance, remoteMessage => {
     console.log('Notification opened from background:', remoteMessage);
+    navigateFromNotificationData(remoteMessage?.data as Record<string, string>);
   });
 
   const initialNotification = await getInitialNotification(messagingInstance);
   if (initialNotification) {
     console.log('Notification opened from quit state:', initialNotification);
+    setTimeout(() => {
+      navigateFromNotificationData(initialNotification?.data as Record<string, string>);
+    }, 700);
   }
 
   return () => {

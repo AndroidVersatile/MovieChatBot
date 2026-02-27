@@ -51,7 +51,7 @@ const PaymentScreen = () => {
 
     const options = {
       description: `${movie.title} - ${selectedSeats.length} Seat(s)`,
-      image: require('../assets/images/BotChat.png'),
+      image: 'https://razorpay.com/assets/razorpay-logo.svg',
       currency: 'INR',
       key: 'rzp_test_1DP5mmOlF5G5ag',
       amount: total * 100,
@@ -123,6 +123,11 @@ const PaymentScreen = () => {
       })
       .catch((error: any) => {
         setIsProcessing(false)
+        console.log('Razorpay error:', error)
+        Alert.alert(
+          'Payment Failed',
+          `${error?.description || 'Unknown error'} (code: ${error?.code || 'n/a'})`
+        )
         navigation.navigate('BookingConfirmation' as never, {
           movie,
           theater,

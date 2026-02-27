@@ -59,6 +59,11 @@ notifee.onBackgroundEvent(async ({ type, detail }) => {
         console.log('Notifee background event:', type, detail?.notification?.id);
     }
 });
+notifee.onForegroundEvent(async ({ type, detail }) => {
+    if (type === EventType.PRESS || type === EventType.ACTION_PRESS) {
+        console.log('Notifee foreground event:', type, detail?.notification?.id);
+    }
+});
 
 setBackgroundMessageHandler(getMessaging(), async remoteMessage => {
     console.log('Background push message:', remoteMessage);
@@ -71,7 +76,7 @@ const Root = () => {
             <App />
             <Toast position='top' topOffset={50} config={toastConfig}
 
-                // autoHide={false}
+            // autoHide={false}
 
             />
         </Provider>

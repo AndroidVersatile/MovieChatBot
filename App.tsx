@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native'
-import React, { useEffect } from 'react'
+import React, { useEffect, useRef } from 'react'
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import RootNav from './src/AppRootNav/RootNav';
 import { SystemBars } from 'react-native-edge-to-edge';
@@ -10,7 +10,7 @@ import NetInfo from "@react-native-community/netinfo";
 import { listenToAuthChanges } from './src/firebase/authlistner';
 import { connectionChange } from './src/redux/slice/networkSlice';
 import { getFirestore, collection, addDoc } from '@react-native-firebase/firestore';
-import { initializePushNotifications } from './src/services/pushNotificationService';
+import { cleanupPushTokenForUser, initializePushNotifications } from './src/services/pushNotificationService';
 
 import { getApp } from '@react-native-firebase/app';
 import { initializeAppCheck, ReactNativeFirebaseAppCheckProvider } from '@react-native-firebase/app-check';
@@ -18,6 +18,7 @@ import { initializeAppCheck, ReactNativeFirebaseAppCheckProvider } from '@react-
 const App = () => {
   const dispatch = useDispatch();
   const user = useSelector((state: any) => state.auth.user);
+  const previousUidRef = useRef<string | null>(null);
 
   // const movies = [
   //   {
@@ -324,12 +325,23 @@ const App = () => {
   }, [dispatch]);
 
   useEffect(() => {
+
+
     let cleanupNotifications = () => { };
     let isDisposed = false;
+    const previousUid = previousUidRef.current;
+    const currentUid = user?.uid || null;
+    previousUidRef.current = currentUid;
+
+    if (previousUid && previousUid !== currentUid) {
+      cleanupPushTokenForUser(previousUid).catch((error) => {
+        console.log('Push token cleanup error:', error);
+      });
+    }
 
     const setupPush = async () => {
       const cleanup = await initializePushNotifications({
-        uid: user?.uid,
+        uid: currentUid,
       });
 
       if (isDisposed) {

@@ -37,7 +37,7 @@ const serializeUser = (user) => {
     return {
         uid: user.uid,
         email: user.email,
-        phoneNumber: user.phoneNumber, // Added this since you're using Phone Auth!
+        phoneNumber: user.phoneNumber,
         displayName: user.displayName,
         photoURL: user.photoURL,
 
